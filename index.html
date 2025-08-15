@@ -58,6 +58,18 @@
             }
             return content;
           });
+          // 新增：每次路由变化强制刷新侧边栏
+          hook.doneEach(function () {
+            var sidebar = document.querySelector('.sidebar-nav');
+            if (sidebar) {
+              var sidebarUrl = '_sidebar.md?t=' + Date.now();
+              fetch(sidebarUrl)
+                .then(res => res.text())
+                .then(md => {
+                  sidebar.innerHTML = window.marked(md);
+                });
+            }
+          });
         }
       ]
     };
