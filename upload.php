@@ -1,5 +1,8 @@
 <?php
 header('Content-Type: application/json');
+header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Pragma: no-cache');
+header('Expires: 0');
 
 // 检查是否有文件上传
 if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
@@ -35,6 +38,9 @@ while (file_exists($docsDir . '/' . $newFilename)) {
 
 // 移动上传的文件到docs文件夹
 if (move_uploaded_file($file['tmp_name'], $docsDir . '/' . $newFilename)) {
+    // 设置文件权限
+    chmod($docsDir . '/' . $newFilename, 0644);
+    
     // 更新sidebar
     updateSidebar();
     
@@ -64,6 +70,13 @@ function updateSidebar() {
     }
     
     // 写入_sidebar.md文件
-    file_put_contents('_sidebar.md', $sidebarContent);
+    if (file_put_contents('_sidebar.md', $sidebarContent) === false) {
+        error_log('无法写入_sidebar.md文件');
+    }
+    
+    // 清除可能的缓存
+    if (function_exists('clearstatcache')) {
+        clearstatcache();
+    }
 }
 ?>

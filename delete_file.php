@@ -1,5 +1,8 @@
 <?php
 header('Content-Type: application/json');
+header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Pragma: no-cache');
+header('Expires: 0');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => '无效的请求方法']);
@@ -57,6 +60,13 @@ function updateSidebar() {
     }
     
     // 写入_sidebar.md文件
-    file_put_contents('_sidebar.md', $sidebarContent);
+    if (file_put_contents('_sidebar.md', $sidebarContent) === false) {
+        error_log('无法写入_sidebar.md文件');
+    }
+    
+    // 清除可能的缓存
+    if (function_exists('clearstatcache')) {
+        clearstatcache();
+    }
 }
 ?>

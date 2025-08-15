@@ -36,7 +36,30 @@
         noData: 'No matches found.',
         // Headline depth, 1 - 6
         depth: 2,
-      }
+      },
+
+      // 缓存控制配置
+      cache: false,
+
+      // 添加时间戳防止缓存
+      loadNavbar: false,
+
+      // 调试模式
+      debug: true,
+
+      // 自定义插件：添加时间戳到URL防止缓存
+      plugins: [
+        function (hook, vm) {
+          hook.beforeEach(function (content) {
+            // 为每个markdown文件添加时间戳参数
+            if (vm.route.path !== '/') {
+              const timestamp = new Date().getTime();
+              return content + '\n\n<!-- 更新时间: ' + timestamp + ' -->';
+            }
+            return content;
+          });
+        }
+      ]
     };
   </script>
 
@@ -46,6 +69,25 @@
   <!-- Recommended -->
   <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/zoom-image.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.js"></script>
+
+  <!-- 添加缓存控制脚本 -->
+  <script>
+    // 强制刷新页面内容，防止304缓存
+    if (window.location.search.indexOf('refresh=') === -1) {
+      const separator = window.location.search ? '&' : '?';
+      window.location.search = window.location.search + separator + 'refresh=' + Date.now();
+    }
+
+    // 监听路由变化，强制刷新内容
+    window.addEventListener('hashchange', function () {
+      // 清除可能的缓存
+      if (window.location.hash) {
+        const currentTime = new Date().getTime();
+        const newHash = window.location.hash + '?t=' + currentTime;
+        history.replaceState(null, null, newHash);
+      }
+    });
+  </script>
 
 </body>
 

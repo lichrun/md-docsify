@@ -4,12 +4,13 @@
 
 ## 文件上传
 
-<form action="upload.php" method="post" enctype="multipart/form-data" style="margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+<form id="uploadForm" style="margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
   <div style="margin-bottom: 15px;">
     <label for="file" style="display: block; margin-bottom: 5px; font-weight: bold;">选择Markdown文件：</label>
     <input type="file" id="file" name="file" accept=".md" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 3px;">
   </div>
-  <button type="submit" style="background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 3px; cursor: pointer;">上传文件</button>
+  <button type="submit" id="uploadBtn" style="background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 3px; cursor: pointer;">上传文件</button>
+  <div id="uploadStatus" style="margin-top: 10px; display: none;"></div>
 </form>
 
 ## 最近上传的文件
@@ -19,6 +20,59 @@
 </div>
 
 <script>
+// 处理文件上传
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const fileInput = document.getElementById('file');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const uploadStatus = document.getElementById('uploadStatus');
+  
+  if (!fileInput.files[0]) {
+    alert('请选择文件');
+    return;
+  }
+  
+  const formData = new FormData();
+  formData.append('file', fileInput.files[0]);
+  
+  // 显示上传状态
+  uploadBtn.disabled = true;
+  uploadBtn.textContent = '上传中...';
+  uploadStatus.style.display = 'block';
+  uploadStatus.innerHTML = '<span style="color: #007bff;">正在上传文件...</span>';
+  
+  fetch('upload.php', {
+    method: 'POST',
+    body: formData
+  })
+  .then(response => response.json())
+  .then(result => {
+    if (result.success) {
+      uploadStatus.innerHTML = '<span style="color: #28a745;">✓ ' + result.message + '</span>';
+      fileInput.value = ''; // 清空文件选择
+      
+      // 重新加载文件列表
+      loadFileList();
+      
+      // 延迟刷新页面以更新sidebar
+      setTimeout(() => {
+        location.reload();
+      }, 1000);
+    } else {
+      uploadStatus.innerHTML = '<span style="color: #dc3545;">✗ ' + result.message + '</span>';
+    }
+  })
+  .catch(error => {
+    console.error('上传失败:', error);
+    uploadStatus.innerHTML = '<span style="color: #dc3545;">✗ 上传失败，请重试</span>';
+  })
+  .finally(() => {
+    uploadBtn.disabled = false;
+    uploadBtn.textContent = '上传文件';
+  });
+});
+
 // 加载文件列表
 function loadFileList() {
   fetch('get_files.php')
