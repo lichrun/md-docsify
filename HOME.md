@@ -1,31 +1,86 @@
-# Docsify Template
+# Markdown 文档系统
 
-> A simple [Docsify](https://github.com/docsifyjs/docsify/) template for creating Markdown-based documentation sites, with no build process required.
+> 可以上传和解析MD文件
 
-## Site Setup
+## 文件上传
 
-### Static Webserver
-Upload these template files to any static web server. The file `.nojekyll` is only required if hosting the site on GitHub Pages and otherwise can be removed.
+<form action="upload.php" method="post" enctype="multipart/form-data" style="margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+  <div style="margin-bottom: 15px;">
+    <label for="file" style="display: block; margin-bottom: 5px; font-weight: bold;">选择Markdown文件：</label>
+    <input type="file" id="file" name="file" accept=".md" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 3px;">
+  </div>
+  <button type="submit" style="background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 3px; cursor: pointer;">上传文件</button>
+</form>
 
-### GitHub Pages
+## 最近上传的文件
 
-#### Hosting Site
+<div id="fileList">
+  <!-- 文件列表将通过JavaScript动态加载 -->
+</div>
 
-To host this template on GitHub Pages do the following:  
+<script>
+// 加载文件列表
+function loadFileList() {
+  fetch('get_files.php')
+    .then(response => response.json())
+    .then(files => {
+      const fileList = document.getElementById('fileList');
+      if (files.length === 0) {
+        fileList.innerHTML = '<p>暂无文件</p>';
+        return;
+      }
+      
+      let html = '<div style="margin-top: 20px;">';
+      files.forEach(file => {
+        const date = new Date(file.upload_time).toLocaleString('zh-CN');
+        html += `
+          <div style="border: 1px solid #eee; padding: 15px; margin-bottom: 10px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <strong>${file.name}</strong><br>
+              <small style="color: #666;">上传时间: ${date}</small>
+            </div>
+            <button onclick="deleteFile('${file.name}')" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">删除</button>
+          </div>
+        `;
+      });
+      html += '</div>';
+      fileList.innerHTML = html;
+    })
+    .catch(error => {
+      console.error('加载文件列表失败:', error);
+      document.getElementById('fileList').innerHTML = '<p style="color: red;">加载文件列表失败</p>';
+    });
+}
 
-1. Log into GitHub if you have not done so already
-2. Tap the **Use this template** button in the upper-right of this GitHub Repository and choose **Create a new repository**
-3. Enter a name for your new Repository and then tap the **Create repository** button
-4. Once your new Repostitory is created go to **Settings**, then select **Pages** from the left-hand sidebar, and under **Branch** choose **main** and then tap the **Save** button
-5. Wait a minute or two and refresh the same **Pages** page - once your site is ready a message will be displayed at the top of the screen along with a site link and a **Visit site** button
+// 删除文件
+function deleteFile(filename) {
+  if (confirm('确定要删除文件 ' + filename + ' 吗？')) {
+    fetch('delete_file.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: 'filename=' + encodeURIComponent(filename)
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        alert('文件删除成功');
+        loadFileList();
+        // 刷新页面以更新sidebar
+        location.reload();
+      } else {
+        alert('删除失败: ' + result.message);
+      }
+    })
+    .catch(error => {
+      console.error('删除文件失败:', error);
+      alert('删除文件失败');
+    });
+  }
+}
 
-#### Editing Content
+// 页面加载完成后加载文件列表
+document.addEventListener('DOMContentLoaded', loadFileList);
+</script>
 
-How about editing the content of your new Docsify site on GitHub Pages? View the Markdown page you want to edit (for example, **README.md**) and tap the **Pencil Icon**, then save any changes by tapping the green **Commit changes...** button. In just a few moments the Docsify site will be automatically updated to reflect those changes.
-
-### Viewing Locally 
-Run `npx serve .` (Node.js users) or `python -m http.server 8000` (Python users) in the repo folder to serve run locally.
-
-## Docsify Documentation
-
-To learn more about using Docsify, visit https://docsify.js.org.
